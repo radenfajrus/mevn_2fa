@@ -1,11 +1,12 @@
 
 <template>
+
 <div class="min-h-screen flex flex-col items-center justify-center">
   <div class="flex flex-col bg-white shadow-md px-4 sm:px-6 md:px-8 lg:px-10 py-8 rounded-md w-full max-w-md">
     <div class="font-medium self-center text-xl sm:text-2xl uppercase text-gray-800">Login To Your Account</div>
-    <button class="relative mt-6 border rounded-md py-2 text-sm text-gray-800 bg-gray-100 hover:bg-gray-200">
-      <span class="absolute left-0 top-0 flex items-center justify-center h-full w-10 text-blue-500"><i class="fab fa-facebook-f"></i></span>
-      <span>Login with Facebook</span>
+    <button @click='handleSignIn' class="relative mt-6 border rounded-md py-2 text-sm text-gray-800 bg-gray-100 hover:bg-gray-200">
+      <span class="absolute left-0 top-0 flex items-center justify-center h-full w-10 text-red-500"><i class="fab fa-google"></i></span>
+      <span>Login with Google</span>
     </button>
     <div class="relative mt-10 h-px bg-gray-300">
       <div class="absolute left-0 top-0 flex justify-center w-full -mt-2">
@@ -74,9 +75,34 @@
 </template>
 
 <script lang="ts" setup>
+import { inject } from 'vue';
+
+const Vue3GoogleOauth = inject('Vue3GoogleOauth');
+
+let handleSignIn = async () => {
+  try {
+    const googleUser = await this.$gAuth.signIn();
+    // console.log(this.$gAuth.signIn);
+    if (!googleUser) {
+      return null;
+    }
+    this.user = googleUser.getBasicProfile().getEmail();
+  } catch (error) {
+    console.log(error);
+    return null;
+  }
+  
+}
+let handleSignOut = async () => {
+  try {
+    await this.$gAuth.signOut();
+    // console.log(this.$gAuth.signOut);
+    this.user = '';
+  } catch (error) {
+    console.log(error);
+  }
+}
 </script>
 
 <style scoped>
-@import url("https://unpkg.com/tailwindcss@1.9.6/dist/tailwind.min.css");
-@import url("https://kit-pro.fontawesome.com/releases/v5.15.1/css/pro.min.css");
 </style>
