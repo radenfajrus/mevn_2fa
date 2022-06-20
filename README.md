@@ -115,3 +115,21 @@ routes.ts  : list route in json
 ## RUN Vite 
 cd ui 
 vite
+
+
+## Create GAUTH ClientId
+https://console.cloud.google.com/apis/credentials/oauthclient  
+Authorized JavaScript origins : http://localhost:3000  
+Authorized redirect URIs : http://localhost:3000  
+
+Enable People API : https://console.cloud.google.com/apis/api/people.googleapis.com/metrics
+
+TIPS: Dont Use JS Library. its just an API.   
+## Many Google Auth JS Library is depricated.
+<pre>
+error: idpiframe_initialization_failed
+
+details: 
+You have created a new client application that uses libraries for user authentication or authorization that will soon be deprecated. New clients must use the new libraries instead; existing clients must also migrate before these libraries are</pre>  
+
+

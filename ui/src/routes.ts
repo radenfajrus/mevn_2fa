@@ -20,6 +20,14 @@ export default [
         component: () => import('@/views/Login.vue'),
       },
       {
+        path: '/logout',
+        name: 'Logout',
+        meta: {
+          requiresAuth: false
+        },
+        component: () => import('@/views/Logout.vue'),
+      },
+      {
         path: '/2fa',
         name: '2fa',
         meta: {

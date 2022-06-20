@@ -68,6 +68,7 @@
           </svg>
         </span>
         <span class="ml-2">You don't have an account?</span>
+        <span>{{gAuth.client}}</span>
       </a>
     </div>
   </div>
@@ -75,31 +76,85 @@
 </template>
 
 <script lang="ts" setup>
-import { inject } from 'vue';
+import { ref } from 'vue'
+import { getCurrentInstance } from 'vue'
+import { inject } from 'vue'
+import { gAuthInterface } from '@/services/gauth';
+import axios from 'axios';
 
-const Vue3GoogleOauth = inject('Vue3GoogleOauth');
+let gAuth: any = inject('gAuth')
 
-let handleSignIn = async () => {
+
+let afterSignIn = async (response) => {
+  // response :
+  // authuser: "0"
+  // code: "4/0AX4XfWjpBceqH9N6tN-K65AYQmvMZnqWwAD3oNP95-pbwIOXdi47s1E9t-2YhLfHTT0I6A"
+  // prompt: "consent"
+  // scope: "email profile https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email openid"
   try {
-    const googleUser = await this.$gAuth.signIn();
-    // console.log(this.$gAuth.signIn);
-    if (!googleUser) {
-      return null;
+    let res: any = await axios.post("https://accounts.google.com/o/oauth2/token",new URLSearchParams({
+      grant_type: 'authorization_code',
+      code: response.code,
+      response_type: 'token',
+      client_id: gAuth.client.config.client_id,
+      client_secret: import.meta.env.VITE_GAUTH_CLIENT_SECRET,
+      redirect_uri: 'postmessage'
+    }));
+    console.log(res.data)
+
+    // https://developers.google.com/people/api/rest/v1/people/get  
+    let userInfo = {
+      "names": "",
+      "nicknames": "",
+      "phoneNumbers": "",
+      "photos": "",
+      "urls": "",
+      "clientData": "",
+      "birthdays": "",
+      "genders": "",
+      "addresses": "",
+      "emailAddresses": "",
     }
-    this.user = googleUser.getBasicProfile().getEmail();
+    let fields = "personFields="+Object.keys(userInfo).join(",")
+    
+    let res_user = await axios.get("https://people.googleapis.com/v1/people/me?"+fields,{
+      headers: {
+        Authorization: "Bearer "+res.data.access_token
+      }
+    });
+    console.log(res_user.data)
+
+    localStorage.setItem("auth_provider","gAuth");
+    localStorage.setItem("access_token",res.data.access_token);
+    localStorage.setItem("user_profile",res_user.data);
+
+    let hashes = {}
+    window.location.hash.substr(1).split("&").forEach( (x) => hashes[x.split("=")[0]] = x.split("=")[1] )
+    
+    if(hashes && hashes.redirect_uri){
+      window.location = decodeURIComponent(hashes.redirect_uri);
+    }else{
+      window.location.href = `/main` ;
+    }
   } catch (error) {
-    console.log(error);
+    console.error(error);
     return null;
   }
-  
+}
+let handleSignIn = async () => {
+  try {
+    await gAuth.client.signIn("http://localhost:3000/2fa",afterSignIn);
+  } catch (error) {
+    console.error(error);
+    return null;
+  }
 }
 let handleSignOut = async () => {
   try {
-    await this.$gAuth.signOut();
-    // console.log(this.$gAuth.signOut);
-    this.user = '';
+    await gAuth.signOut();
+    user.value = '';
   } catch (error) {
-    console.log(error);
+    console.error(error);
   }
 }
 </script>

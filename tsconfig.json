@@ -13,7 +13,6 @@
     "skipLibCheck": true,
     "noImplicitAny": false,
     "allowJs": true,
-    "declaration": false,
     "paths": { "@/*":["./src/*"] }
   },
   "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.tsx", "src/**/*.vue"],
