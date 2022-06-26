@@ -80,12 +80,13 @@ import { ref } from 'vue'
 import { getCurrentInstance } from 'vue'
 import { inject } from 'vue'
 import { AuthInterface } from '@/services/gauth';
+import { getTokenGAuth } from '@/services/auth';
 import axios from 'axios';
 
 let gAuth: AuthInterface = inject('gAuth')! 
 
 
-let afterSignIn = async (response) => {
+let afterSignInFrontendBased = async (response) => {
   // response :
   // authuser: "0"
   // code: "4/0AX4XfWjpBceqH9N6tN-K65AYQmvMZnqWwAD3oNP95-pbwIOXdi47s1E9t-2YhLfHTT0I6A"
@@ -130,9 +131,25 @@ let afterSignIn = async (response) => {
     return null;
   }
 }
+
+let afterSignInBackendBased = async (response) => {
+  try {
+    let access_token = ""
+    let id_token = ""
+    console.log(response.code)
+    if(response.code){
+      let token = await getTokenGAuth(response.code)
+      if(token) access_token = token.access_token
+      if(token) id_token = token.id_token
+    }
+  } catch (error) {
+    console.error(error);
+    return null;
+  }
+}
 let handleSignIn = async () => {
   try {
-    await gAuth.client.signIn("http://localhost:3000/2fa",afterSignIn);
+    await gAuth.client.signIn("http://localhost:3000/2fa",afterSignInBackendBased);
   } catch (error) {
     console.error(error);
     return null;
