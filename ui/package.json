@@ -14,7 +14,8 @@
     "vue": "^3.2.25",
     "vue-class-component": "^8.0.0-rc.1",
     "vue-router": "^4.0.13",
-    "vue3-google-oauth2": "^1.0.6"
+    "vue3-google-oauth2": "^1.0.6",
+    "vue3-otp-input": "^0.3.6"
   },
   "devDependencies": {
     "@types/node": "^18.0.0",

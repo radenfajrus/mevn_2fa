@@ -68,7 +68,7 @@
           </svg>
         </span>
         <span class="ml-2">You don't have an account?</span>
-        <span>{{gAuth.client}}</span>
+        <span>{{gAuth}}</span>
       </a>
     </div>
   </div>
@@ -79,10 +79,10 @@
 import { ref } from 'vue'
 import { getCurrentInstance } from 'vue'
 import { inject } from 'vue'
-import { gAuthInterface } from '@/services/gauth';
+import { AuthInterface } from '@/services/gauth';
 import axios from 'axios';
 
-let gAuth: any = inject('gAuth')
+let gAuth: AuthInterface = inject('gAuth')! 
 
 
 let afterSignIn = async (response) => {
@@ -92,15 +92,13 @@ let afterSignIn = async (response) => {
   // prompt: "consent"
   // scope: "email profile https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email openid"
   try {
-    let res: any = await axios.post("https://accounts.google.com/o/oauth2/token",new URLSearchParams({
-      grant_type: 'authorization_code',
-      code: response.code,
-      response_type: 'token',
-      client_id: gAuth.client.config.client_id,
-      client_secret: import.meta.env.VITE_GAUTH_CLIENT_SECRET,
-      redirect_uri: 'postmessage'
-    }));
-    console.log(res.data)
+    let access_token = ""
+    let id_token = ""
+    if(response.code){
+      let token = await gAuth.client.getAccessToken(response.code)
+      if(token) access_token = token.access_token
+      if(token) id_token = token.id_token
+    }
 
     // https://developers.google.com/people/api/rest/v1/people/get  
     let userInfo = {
@@ -115,27 +113,18 @@ let afterSignIn = async (response) => {
       "addresses": "",
       "emailAddresses": "",
     }
-    let fields = "personFields="+Object.keys(userInfo).join(",")
-    
-    let res_user = await axios.get("https://people.googleapis.com/v1/people/me?"+fields,{
-      headers: {
-        Authorization: "Bearer "+res.data.access_token
-      }
+
+    let user = await gAuth.client.getUserProfile(access_token,userInfo)
+
+    setLocalStorage({
+      auth_provider: "gAuth",
+      access_token: access_token,
+      id_token: id_token,
+      user_profile: JSON.stringify(user)
     });
-    console.log(res_user.data)
-
-    localStorage.setItem("auth_provider","gAuth");
-    localStorage.setItem("access_token",res.data.access_token);
-    localStorage.setItem("user_profile",res_user.data);
-
-    let hashes = {}
-    window.location.hash.substr(1).split("&").forEach( (x) => hashes[x.split("=")[0]] = x.split("=")[1] )
     
-    if(hashes && hashes.redirect_uri){
-      window.location = decodeURIComponent(hashes.redirect_uri);
-    }else{
-      window.location.href = `/main` ;
-    }
+    redirectToMainPage()
+
   } catch (error) {
     console.error(error);
     return null;
@@ -149,13 +138,23 @@ let handleSignIn = async () => {
     return null;
   }
 }
-let handleSignOut = async () => {
-  try {
-    await gAuth.signOut();
-    user.value = '';
-  } catch (error) {
-    console.error(error);
-  }
+
+let setLocalStorage = (obj) =>{
+  Object.keys(obj).forEach(key => {
+    localStorage.setItem(key,obj[key]);
+  });
+
+}
+
+let redirectToMainPage = () => {
+    let hashes: any = {};
+    (window.location.hash).substr(1).split("&").forEach( (x) => hashes[x.split("=")[0]] = x.split("=")[1] )
+    
+    if(hashes && hashes.redirect_uri){
+      window.location.replace(decodeURIComponent(hashes.redirect_uri));
+    }else{
+      window.location.href = `/main` ;
+    }
 }
 </script>
 

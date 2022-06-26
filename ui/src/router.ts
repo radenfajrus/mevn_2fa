@@ -6,14 +6,32 @@ function sleep(ms: number) {
 }
 
 const isAuthenticated = () => {
-  let auth_provider = localStorage.getItem("auth_provider")
-  let access_token = localStorage.getItem("access_token")
-  let user_profile = localStorage.getItem("user_profile")
+  let auth_provider = localStorage.getItem("auth_provider") || ""
+  let access_token = localStorage.getItem("access_token") || ""
+  let user_profile = localStorage.getItem("user_profile") || ""
+  let id_token = localStorage.getItem("id_token") || ""
+  
+  console.log(user_profile);
+  if (!id_token || id_token==="undefined" || id_token === "null") return false;
+
+  let base64Body = id_token.split('.')[1] || ""
+  let bodyString = base64Body.replace(/-/g, '+').replace(/_/g, '/');
+  let bodyJsonString = decodeURIComponent(window.atob(bodyString).split('').map(function(c) {
+      return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+  }).join(''));
+  let bodyJson = JSON.parse(bodyJsonString)
+
+  let expired_time = bodyJson.exp;
+  console.log(expired_time)
+
   if(auth_provider==="gAuth"){
 
   }
 
-  return (access_token)?true:false;
+  return true;
+}
+const is2FA = () => {
+  return false;
 }
 
 const createVueRouter = (app: any) => {
@@ -25,13 +43,19 @@ const createVueRouter = (app: any) => {
   router.beforeEach(async (to, from, next) => {
     console.log(to)
     console.log(isAuthenticated())
+    console.log(is2FA())
     
-    if (isAuthenticated() && to.path === "/login") {
+    if (isAuthenticated() && is2FA() && to.path === "/login") {
       window.location.href = `/main` ;
+    }else if (isAuthenticated() && to.path === "/login"){
+      window.location.href = `/2fa` ;
     }
+
     if (to.matched.some(record => record.meta.requiresAuth)) {
-        if (isAuthenticated()) {
+        if (isAuthenticated() && is2FA()) {
             next()
+        } else if(isAuthenticated()){
+            window.location.href = `/2fa` ;
         } else {
             window.location.href = `/logout#redirect_uri=${encodeURIComponent(window.location.href)}`
         }

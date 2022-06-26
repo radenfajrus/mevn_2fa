@@ -111,6 +111,9 @@ main.ts
 router.ts  : router function (vue-router)  
 routes.ts  : list route in json   
   
+## UI Component Template
+https://vuejsexamples.com/
+https://tailwindcomponents.com/component/native-and-social-login-form
 
 ## RUN Vite 
 cd ui 

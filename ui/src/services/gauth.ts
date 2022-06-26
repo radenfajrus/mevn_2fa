@@ -2,11 +2,11 @@ import { callbackify } from "util";
 import { reactive, readonly } from "vue";
 
 export interface AuthInterface{
-    client: AuthClientInterface | null,
+    client: AuthClientInterface,
     isInit: Boolean,
 }
 export var gAuth: AuthInterface = reactive({
-  client: null,
+  client: null!,
   isInit: false,
 })
 
@@ -15,6 +15,8 @@ export interface AuthClientInterface{
     signIn(redirect_uri,callback);
     signOut();
     refresh();
+    getAccessToken(code);
+    getUserProfile(access_token, userModel);
 }
 
 let defaultConfig = {
@@ -131,6 +133,46 @@ class Auth implements AuthClientInterface{
     }
     signOut = () => {    }
     refresh = () => {    }
+    getAccessToken = async (code) => {   
+        if(!import.meta.env.VITE_GAUTH_CLIENT_SECRET){
+            console.error("No Env Client Secret Provided : GAUTH_CLIENT_SECRET")
+            return null
+        }
+        let res =  await fetch("https://accounts.google.com/o/oauth2/token",
+        {
+            method: "POST",
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'
+            },
+            body: new URLSearchParams({
+                grant_type: 'authorization_code',
+                code: code,
+                response_type: 'token',
+                client_id: this.config.client_id,
+                client_secret: import.meta.env.VITE_GAUTH_CLIENT_SECRET,
+                redirect_uri: 'postmessage'
+            })
+        });
+
+        return (res.status == 200)?await res.json():null;
+    }
+    getUserProfile = async (access_token, userModel) => {   
+        let fields = "personFields="+Object.keys(userModel).join(",")
+        let res = await fetch("https://people.googleapis.com/v1/people/me?"+fields,
+        {
+            method: "GET",
+            headers: {
+              Authorization: "Bearer "+access_token
+            }
+         });
+
+        let res_data = (res.status == 200)?await res.json():{};
+        let userData = userModel;
+        Object.keys(userModel).forEach(key => {
+            userData[key] = res_data[key]
+        });
+        return userData
+    }
 }
 
   
